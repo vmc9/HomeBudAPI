@@ -1,1 +1,3 @@
 node_modules/
+dbInfo.txt
+nodemon.json

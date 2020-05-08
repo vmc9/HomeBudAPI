@@ -2,9 +2,18 @@ const express = require('express');
 const app = express();
 const morgan = require('morgan');
 const bodyParser = require('body-parser')
+const mongoose = require('mongoose')
 
 const petRoutes = require('./api/routes/pet');
-const searchRoutes = require('./api/routes/search')
+const searchRoutes = require('./api/routes/search');
+const userRoutes = require('./api/routes/user');
+
+mongoose.connect('mongodb+srv://dbAdmin:'+process.env.MONGO_ATLAS_PW+'@cluster0-y8qoc.gcp.mongodb.net/test?retryWrites=true&w=majority',
+    {
+        useNewUrlParser: true,
+        useUnifiedTopology: true
+    }
+);
 
 app.use(morgan('dev'));
 app.use(bodyParser.urlencoded({extended: false}));

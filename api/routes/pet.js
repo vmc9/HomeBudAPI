@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
+const Pet = require('../models/pet');
 
 //Pet GET methods
 router.get('/', (req, res, next) => {
@@ -32,8 +34,19 @@ router.delete('/:petId', (req, res, next) => {
 
 //Pet POST methods
 router.post('/', (req, res, next) => {
+    const pet = new Pet({
+        _id: mongoose.Types.ObjectId(),
+        name: req.body.name,
+        description: req.body.description,
+    });
+    pet.save()
+    .then( result => {
+        console.log(result);
+    })
+    .catch( error => console.log(err))
     res.status(201).json({
-        Message: "Response to POST from /pet"
+        Message: "Response to POST from /pet",
+        createdPet: pet
     })
 });
 
