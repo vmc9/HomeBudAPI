@@ -5,31 +5,34 @@ const Pet = require('../models/pet');
 
 //Pet GET methods
 router.get('/', (req, res, next) => {
-    res.status(200).json({
-        Message: "Response to GET from /pet"
+    Pet.find()
+    .then( result => {
+        res.status(200).json({
+            Message: "Response to GET from /pet",
+            pets: result
+        })
     })
+    .catch( err => {
+        res.status(404).json({
+            Message: "No pets found"
+        })
+    });
 });
 
 router.get('/:petId', (req, res, next) => {
     const id = req.params.petId;
-    res.status(200).json({
-        Message: "Response to GET from /pet",
-        Id: id
+    Pet.findById(id)
+    .then( result => {
+        res.status(200).json({
+            Message: "Response to GET from /pet",
+            pet: result
+        })
     })
-});
-
-router.patch('/:petId', (req, res, next) => {
-    const id = req.params.petId;
-    res.status(200).json({
-        Message: "Response to PATCH from /pet",
-    })
-});
-
-router.delete('/:petId', (req, res, next) => {
-    const id = req.params.petId;
-    res.status(200).json({
-        Message: "Response to DELETE from /pet",
-    })
+    .catch( err => {
+        res.status(404).json({
+            Message: "Pet not found"
+        })
+    });
 });
 
 //Pet POST methods
@@ -50,5 +53,18 @@ router.post('/', (req, res, next) => {
     })
 });
 
+router.patch('/:petId', (req, res, next) => {
+    const id = req.params.petId;
+    res.status(200).json({
+        Message: "Response to PATCH from /pet",
+    })
+});
+
+router.delete('/:petId', (req, res, next) => {
+    const id = req.params.petId;
+    res.status(200).json({
+        Message: "Response to DELETE from /pet",
+    })
+});
 
 module.exports = router;
