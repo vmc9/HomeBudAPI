@@ -6,12 +6,14 @@ const Pet = require('../models/pet');
 //Pet GET methods
 router.get('/', (req, res, next) => {
     Pet.find()
+    .select('-__v')
     .exec()
     .then( result => {
         if(result.length > 0){
             res.status(200).json({
                 Message: "All pets found",
-                pets: result
+                pets: result,
+                petCount: result.length
             })
         } else {
             res.status(200).json({
@@ -29,6 +31,7 @@ router.get('/', (req, res, next) => {
 router.get('/:petId', (req, res, next) => {
     const id = req.params.petId;
     Pet.findById({ _id: id })
+    .select('-__v')
     .exec()
     .then( result => {
         if(result){
@@ -51,20 +54,47 @@ router.get('/:petId', (req, res, next) => {
 
 //Pet POST methods
 router.post('/', (req, res, next) => {
-    const pet = new Pet({
-        _id: mongoose.Types.ObjectId(),
+    Pet.exists({ 
         name: req.body.name,
-        description: req.body.description,
+        animal: req.body.animal
+    }, 
+    (error, result) => {
+        if(error) {
+            res.status(500).json({
+                error: err
+            })
+        } else {
+            if(!result){
+                const pet = new Pet({
+                    _id: mongoose.Types.ObjectId(),
+                    name: req.body.name,
+                    animal: req.body.animal,
+                    description: req.body.description,
+                });
+                pet.save()
+                .then( dbResult => {
+                    res.status(201).json({
+                        Message: "Pet added succesfully",
+                        createdPet: {
+                            _id: dbResult._id,
+                            name: dbResult.name,
+                            animal: dbResult.animal,
+                            description: dbResult.description
+                        }
+                    })
+                })
+                .catch( err => {
+                    res.status(500).json({
+                        error: err
+                    })
+                }) 
+            } else {
+                res.status(400).json({
+                    Message: "Bad request"
+                })
+            }   
+        }
     });
-    pet.save()
-    .then( result => {
-        console.log(result);
-    })
-    .catch( error => console.log(err))
-    res.status(201).json({
-        Message: "Pet added succesfully",
-        createdPet: pet
-    })
 });
 
 //Pet PATCH methods
@@ -109,6 +139,26 @@ router.delete('/:petId', (req, res, next) => {
             error: err,
         })
     });
+});
+
+router.delete('/', (req, res, next) => {
+    Pet.deleteMany({}, (err, result) => {
+        if(err){
+            res.status(500).json({
+                error: err,
+            })
+        } else {
+            if (result.deletedCount === 1){
+                res.status(200).json({
+                    Message: "Cleared database",
+                })
+            } else {
+                res.status(404).json({
+                    Message: "Delete failed",
+                })
+            }
+        }
+    })
 });
 
 module.exports = router;
