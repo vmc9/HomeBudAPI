@@ -23,6 +23,7 @@ app.use(bodyParser.json());
 //Routes setup
 app.use('/pet', petRoutes);
 app.use('/search', searchRoutes);
+app.use('/users', userRoutes);
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*')

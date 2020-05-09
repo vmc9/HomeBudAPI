@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const Pet = require('../models/pet');
+const Owner = require('../models/user')
 
 //Pet GET methods
 router.get('/', (req, res, next) => {
@@ -23,7 +24,7 @@ router.get('/', (req, res, next) => {
     })
     .catch( err => {
         res.status(404).json({
-            Message: "No database found"
+            error: err
         })
     });
 });
@@ -54,46 +55,58 @@ router.get('/:petId', (req, res, next) => {
 
 //Pet POST methods
 router.post('/', (req, res, next) => {
-    Pet.exists({ 
-        name: req.body.name,
-        animal: req.body.animal
-    }, 
-    (error, result) => {
-        if(error) {
-            res.status(500).json({
-                error: err
-            })
-        } else {
-            if(!result){
-                const pet = new Pet({
-                    _id: mongoose.Types.ObjectId(),
-                    name: req.body.name,
-                    animal: req.body.animal,
-                    description: req.body.description,
-                });
-                pet.save()
-                .then( dbResult => {
-                    res.status(201).json({
-                        Message: "Pet added succesfully",
-                        createdPet: {
-                            _id: dbResult._id,
-                            name: dbResult.name,
-                            animal: dbResult.animal,
-                            description: dbResult.description
-                        }
-                    })
+    Owner.findById(req.body.owner)
+    .exec()
+    .then( owner => {
+        Pet.exists({ 
+            name: req.body.name,
+            animal: req.body.animal,
+            owner: owner
+        }, 
+        (error, result) => {
+            if(error) {
+                res.status(500).json({
+                    error: err
                 })
-                .catch( err => {
-                    res.status(500).json({
-                        error: err
-                    })
-                }) 
             } else {
-                res.status(400).json({
-                    Message: "Bad request"
-                })
-            }   
-        }
+                if(!result){
+                    const pet = new Pet({
+                        _id: mongoose.Types.ObjectId(),
+                        name: req.body.name,
+                        animal: req.body.animal,
+                        description: req.body.description,
+                        owner: owner
+                    });
+                    pet.save()
+                    .then( dbResult => {
+                        res.status(201).json({
+                            Message: "Pet added succesfully",
+                            createdPet: {
+                                _id: dbResult._id,
+                                name: dbResult.name,
+                                animal: dbResult.animal,
+                                description: dbResult.description,
+                                owner: dbResult.owner
+                            }
+                        })
+                    })
+                    .catch( err => {
+                        res.status(500).json({
+                            error: err
+                        })
+                    }) 
+                } else {
+                    res.status(400).json({
+                        Message: "Bad request"
+                    })
+                }   
+            }
+        });
+    })
+    .catch( err => {
+        res.status(500).json({
+            error: err
+        })
     });
 });
 
@@ -124,7 +137,7 @@ router.delete('/:petId', (req, res, next) => {
     Pet.deleteOne({ _id: id })
     .exec()
     .then( result => {
-        if (result.deletedCount === 1){
+        if (result.deletedCount > 0){
             res.status(200).json({
                 Message: "Pet deleted successfully",
             })
