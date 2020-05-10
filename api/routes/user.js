@@ -82,6 +82,26 @@ router.delete('/userId', (req, res, next) => {
 
 })
 
+router.delete('/', (req, res, next) => {
+    User.deleteMany({}, (err, result) => {
+        if(err){
+            res.status(500).json({
+                error: err,
+            })
+        } else {
+            if (result.deletedCount > 0){
+                res.status(200).json({
+                    Message: "Cleared database",
+                })
+            } else {
+                res.status(404).json({
+                    Message: "Delete failed",
+                })
+            }
+        }
+    })
+})
+
 //User PATCH methods
 router.param('/userId', (req, res, next) => {
 

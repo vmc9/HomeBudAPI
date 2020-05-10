@@ -58,55 +58,74 @@ router.post('/', (req, res, next) => {
     Owner.findById(req.body.owner)
     .exec()
     .then( owner => {
-        Pet.exists({ 
-            name: req.body.name,
-            animal: req.body.animal,
-            owner: owner
-        }, 
-        (error, result) => {
-            if(error) {
-                res.status(500).json({
-                    error: err
-                })
-            } else {
-                if(!result){
-                    const pet = new Pet({
-                        _id: mongoose.Types.ObjectId(),
-                        name: req.body.name,
-                        animal: req.body.animal,
-                        description: req.body.description,
-                        owner: owner
-                    });
-                    pet.save()
-                    .then( dbResult => {
-                        res.status(201).json({
-                            Message: "Pet added succesfully",
-                            createdPet: {
-                                _id: dbResult._id,
-                                name: dbResult.name,
-                                animal: dbResult.animal,
-                                description: dbResult.description,
-                                owner: dbResult.owner
-                            }
-                        })
+        if(owner){
+            Pet.exists({ 
+                name: req.body.name,
+                animal: req.body.animal,
+                owner: owner
+            }, 
+            (petFoundError, result) => {
+                if(petFoundError) {
+                    res.status(500).json({
+                        petFoundError: petFoundError
                     })
-                    .catch( err => {
-                        res.status(500).json({
-                            error: err
-                        })
-                    }) 
                 } else {
-                    res.status(400).json({
-                        Message: "Bad request"
-                    })
-                }   
-            }
-        });
+                    if(!result){
+                        const pet = new Pet({
+                            _id: mongoose.Types.ObjectId(),
+                            name: req.body.name,
+                            animal: req.body.animal,
+                            description: req.body.description,
+                            owner: owner
+                        });
+                        const petList = owner.pets;
+                        petList.push(pet._id);
+                        Owner.updateOne({ _id: owner._id}, { $set: {
+                            pets: petList
+                        }})
+                        .exec()
+                        .then( updatedOwner => {
+                            pet.save()
+                            .then( dbResult => {
+                                res.status(201).json({
+                                    Message: "Pet added succesfully",
+                                    createdPet: {
+                                        _id: dbResult._id,
+                                        name: dbResult.name,
+                                        animal: dbResult.animal,
+                                        description: dbResult.description,
+                                        owner: dbResult.owner
+                                    }
+                                });
+                            })
+                            .catch( petSaveError => {
+                                res.status(500).json({
+                                    petSaveError: petSaveError
+                                })
+                            }) 
+                        }).
+                        catch( ownerUpdateError => {
+                            res.status(500).json({
+                                ownerUpdateError: ownerUpdateError
+                            })
+                        });
+                    } else {
+                        res.status(400).json({
+                            Message: "Bad request"
+                        })
+                    }   
+                }
+            });
+        } else {
+            res.status(500).json({
+                ownerFoundError: "No owner found"
+            });
+        }
     })
-    .catch( err => {
+    .catch( ownerFoundError => {
         res.status(500).json({
-            error: err
-        })
+            ownerFoundError: ownerFoundError
+        });
     });
 });
 
@@ -131,7 +150,7 @@ router.patch('/:petId', (req, res, next) => {
 
 });
 
-//Pet DELETE methods
+//Pet DELETE methods (NEED TO ADD FEATURE TO REMOVE THE PET FROM THE USERS AS WELL)
 router.delete('/:petId', (req, res, next) => {
     const id = req.params.petId;
     Pet.deleteOne({ _id: id })
@@ -161,7 +180,7 @@ router.delete('/', (req, res, next) => {
                 error: err,
             })
         } else {
-            if (result.deletedCount === 1){
+            if (result.deletedCount > 0){
                 res.status(200).json({
                     Message: "Cleared database",
                 })
