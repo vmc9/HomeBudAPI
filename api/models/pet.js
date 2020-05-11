@@ -11,7 +11,7 @@ const petSchema = new Schema({
     description: { type: String, required: true},
     owner: { 
         type: Schema.Types.ObjectId, 
-        ref: 'user', 
+        ref: 'User', 
     },
     lostStatus: Boolean,
 });

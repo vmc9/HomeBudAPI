@@ -7,6 +7,7 @@ const User = require('../models/user');
 router.get('/', (req, res, next) => {
     User.find()
     .select("-__v")
+    .populate('pets', "-owner -__v")
     .then( result => {
         if(result.length > 0){
             res.status(200).json({
