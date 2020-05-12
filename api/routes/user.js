@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
 //User GET methods
@@ -32,22 +34,62 @@ router.get('/userId', (req, res, next) => {
 })
 
 //User POST methods
-router.post('/', (req, res, next) => {
+router.post('/login', (req, res, next) => {
+    User.find({
+        email: req.body.email
+    })
+    .exec()
+    .then(users => {
+        if(users.length < 1){
+            return res.status(401).json({
+                message: "Auth failed"
+            });
+        } else {
+            bcrypt.compare(req.body.password, users[0].password, (err, result) => {
+                if(err){
+                    return res.status(500).json({
+                        error: err
+                    });
+                }
+                if (result){
+                    return res.status(200).json({
+                        message: "Auth success"
+                    });
+                } else {
+                    return res.status(401).json({
+                        message: "Auth failed"
+                    });
+                }
+            })
+        }
+    })
+    .catch( error => {
+        return res.status(500).json({
+            error: error
+        });
+    })
+});
+
+router.post('/signup', (req, res, next) => {
     User.exists({
         username: req.body.username,
-        email: req.body.username
+        email: req.body.email
     }, (error, result) => {
         if(error){
-            res.status(400).json({
-                Message: "Bad request"
+            return res.status(500).json({
+                error: error
+            })
+        } else if (result){
+            res.status(409).json({
+                Message: "Conflicting request"
             })
         } else {
-            if(!result){
+            bcrypt.hash(req.body.password, 10, (err, hash) =>{
                 const user = new User({
                     _id: mongoose.Types.ObjectId(),
                     username: req.body.username,
                     email: req.body.email,
-                    password: req.body.email,
+                    password: hash,
                     firstName: req.body.firstName,
                     lastName: req.body.lastName
                 });
@@ -59,6 +101,7 @@ router.post('/', (req, res, next) => {
                             _id: dbResult._id,
                             username: dbResult.username,
                             email: dbResult.email,
+                            password: dbResult.password,
                             firstName: dbResult.firstName,
                             lastName: dbResult.lastName
                         }
@@ -69,16 +112,12 @@ router.post('/', (req, res, next) => {
                         error: err
                     })
                 });
-            }
+            })
         }
     })
 })
 
 //User DELETE methods
-router.get('/', (req, res, next) => {
-
-})
-
 router.delete('/userId', (req, res, next) => {
 
 })
