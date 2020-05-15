@@ -3,10 +3,11 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const checkAuth = require('../middleware/checkAuth');
 const User = require('../models/user');
 
 //User GET methods
-router.get('/', (req, res, next) => {
+router.get('/', checkAuth, (req, res, next) => {
     User.find()
     .select("-__v")
     .populate('pets', "-owner -__v")
@@ -52,8 +53,17 @@ router.post('/login', (req, res, next) => {
                     });
                 }
                 if (result){
+                    const token = jwt.sign({
+                        userId: users[0]._id,
+                        email: users[0].email
+                    },
+                    process.env.JWT_KEY,
+                    {
+                        expiresIn: "1h"
+                    });
                     return res.status(200).json({
-                        message: "Auth success"
+                        message: "Auth success",
+                        token: token
                     });
                 } else {
                     return res.status(401).json({
