@@ -7,7 +7,7 @@ const checkAuth = require('../middleware/checkAuth');
 const User = require('../models/user');
 
 //User GET methods
-router.get('/', checkAuth, (req, res, next) => {
+router.get('/', (req, res, next) => {
     User.find()
     .select("-__v")
     .populate('pets', "-owner -__v")
@@ -31,13 +31,14 @@ router.get('/', checkAuth, (req, res, next) => {
 })
 
 router.get('/userId', (req, res, next) => {
-
+    //TODO: FINISH THIS ROUTE FOR THE GET USER BY ID
 })
 
 //User POST methods
 router.post('/login', (req, res, next) => {
+    //TODO: MAKE LOGIN USERNAME BASED
     User.find({
-        email: req.body.email
+        username: req.body.username
     })
     .exec()
     .then(users => {
@@ -55,7 +56,7 @@ router.post('/login', (req, res, next) => {
                 if (result){
                     const token = jwt.sign({
                         userId: users[0]._id,
-                        email: users[0].email
+                        email: users[0].username
                     },
                     process.env.JWT_KEY,
                     {
@@ -80,6 +81,7 @@ router.post('/login', (req, res, next) => {
     })
 });
 
+//TODO: MAKE SURE IT ALSO CHECKS FOR DUPLICATE USERNAMES
 router.post('/signup', (req, res, next) => {
     User.exists({
         username: req.body.username,
