@@ -30,13 +30,38 @@ router.get('/', (req, res, next) => {
     });
 })
 
-router.get('/userId', (req, res, next) => {
-    //TODO: FINISH THIS ROUTE FOR THE GET USER BY ID
+router.get('/:username', checkAuth, (req, res, next) => {
+    User.find({
+        username: req.params.username
+    })
+    .exec()
+    .then(users => {
+        if (users.length < 1){
+            return res.status(401).json({
+                message: "Login failed"
+            })
+        } else {
+            return res.status(200).json({
+                message: "User found",
+                user: {
+                    firstname: users[0].firstName,
+                    lastname: users[0].lastName,
+                    pets: users[0].pets,
+                    username: users[0].username,
+                    email: users[0].email
+                }
+            })
+        }
+    })
+    .catch( error => {
+        return res.status(500).json({
+            error: error
+        });
+    })
 })
 
 //User POST methods
 router.post('/login', (req, res, next) => {
-    //TODO: MAKE LOGIN USERNAME BASED
     User.find({
         username: req.body.username
     })
