@@ -106,7 +106,7 @@ router.post('/login', (req, res, next) => {
     })
 });
 
-//TODO: MAKE SURE IT ALSO CHECKS FOR DUPLICATE USERNAMES
+//TODO: Check for dupe usernames
 router.post('/signup', (req, res, next) => {
     User.exists({
         username: req.body.username,
