@@ -6,12 +6,12 @@ const Pet = require('../models/pet');
 const Owner = require('../models/user')
 
 //Pet GET methods
-router.get('/', (req, res, next) => {
-    Pet.find()
-    .select('-__v')
-    .populate('owner', "-pets -__v")
-    .exec()
-    .then( result => {
+router.get('/', async (req, res, next) => {
+    try{
+        const result = Pet.find()
+        .select('-__v')
+        .populate('owner', "-pets -__v")
+        .exec()
         if(result.length > 0){
             res.status(200).json({
                 Message: "All pets found",
@@ -23,37 +23,34 @@ router.get('/', (req, res, next) => {
                 Message: "Empty database",
             })
         }
-    })
-    .catch( err => {
+    }catch(error){
         res.status(404).json({
             error: err
         })
-    });
+    }
 });
 
-router.get('/:petId', (req, res, next) => {
-    const id = req.params.petId;
-    Pet.findById({ _id: id })
-    .select('-__v')
-    .populate('owner', "-pets -__v")
-    .exec()
-    .then( result => {
-        if(result){
-            res.status(200).json({
-                Message: "Pet found",
-                pet: result
-            })
-        } else {
-            res.status(404).json({
-                Message: "Pet not found"
-            })
-        }
-    })
-    .catch( err => {
+router.get('/:petId', async (req, res, next) => {
+    try{
+        const id = req.params.petId;
+        const result = Pet.findById({ _id: id })
+        .select('-__v')
+        .populate('owner', "-pets -__v")
+            if(result){
+                res.status(200).json({
+                    Message: "Pet found",
+                    pet: result
+                })
+            } else {
+                res.status(404).json({
+                    Message: "Pet not found"
+                })
+            }
+    }catch(error){
         res.status(500).json({
-            Message: err
+            error
         })
-    });
+    }
 });
 
 //Pet POST methods

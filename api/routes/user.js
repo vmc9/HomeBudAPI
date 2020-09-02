@@ -36,7 +36,7 @@ router.get('/:username', checkAuth, async (req, res, next) => {
         const users = await User.find({ username: req.params.username })
         if (users.length < 1){
             return res.status(401).json({
-                message: "Login failed"
+                message: "User not found"
             })
         } else {
             return res.status(200).json({
@@ -132,8 +132,23 @@ router.post('/signup', async (req, res, next) => {
 });
 
 //User DELETE methods
-router.delete('/userId', (req, res, next) => {
-
+router.delete('/:username', async (req, res, next) => {
+    try{
+        const result = await User.deleteOne( { username: req.params.username })
+        if (result.deletedCount > 0){
+            res.status(200).json({
+                Message: "User deleted",
+            })
+        }else{
+            res.status(404).json({
+                Message: "Delete failed",
+            })
+        }
+    }catch(error){
+        res.status(500).json({
+            error
+        })
+    }
 })
 
 router.delete('/', async (req, res, next) => {
@@ -150,12 +165,12 @@ router.delete('/', async (req, res, next) => {
         }
     }catch(error){
         res.status(500).json({
-            error: err,
+            error
         })
     }
 })
 
-//User PATCH methods
+//TODO: User PATCH methods
 router.param('/userId', (req, res, next) => {
 
 })
