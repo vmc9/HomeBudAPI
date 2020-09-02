@@ -4,6 +4,8 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const checkAuth = require('../middleware/checkAuth');
+
+//Model
 const User = require('../models/user');
 
 //User GET methods
@@ -64,31 +66,25 @@ router.post('/login', async (req, res, next) => {
                 message: "Auth failed"
             });
         } else {
-            bcrypt.compare(req.body.password, users[0].password, (err, result) => {
-                if(err){
-                    return res.status(500).json({
-                        error: err
-                    });
-                }
-                if (result){
-                    const token = jwt.sign({
-                        userId: users[0]._id,
-                        email: users[0].username
-                    },
-                    process.env.JWT_KEY,
-                    {
-                        expiresIn: "1h"
-                    });
-                    return res.status(200).json({
-                        message: "Auth success",
-                        token: token
-                    });
-                } else {
-                    return res.status(401).json({
-                        message: "Auth failed"
-                    });
-                }
-            })
+            result = await bcrypt.compare(req.body.password, users[0].password)
+            if (result){
+                const token = jwt.sign({
+                    userId: users[0]._id,
+                    email: users[0].username
+                },
+                process.env.JWT_KEY,
+                {
+                    expiresIn: "1h"
+                });
+                return res.status(200).json({
+                    message: "Auth success",
+                    token: token
+                });
+            } else {
+                return res.status(401).json({
+                    message: "Auth failed"
+                });
+            }
         }
     }catch(error){
         return res.status(500).json({
@@ -97,10 +93,11 @@ router.post('/login', async (req, res, next) => {
     }
 });
 
+//TODO: Add Postal to user model and signup entry
 router.post('/signup', async (req, res, next) => {
     try{
         const result = await User.exists({ $or:[{username: req.body.username }, {email: req.body.email}] })
-        if(username_result){
+        if(result){
             res.status(409).json({
                 Message: "Request conflict"//Email or username are not unique
             })
@@ -139,24 +136,23 @@ router.delete('/userId', (req, res, next) => {
 
 })
 
-router.delete('/', (req, res, next) => {
-    User.deleteMany({}, (err, result) => {
-        if(err){
-            res.status(500).json({
-                error: err,
+router.delete('/', async (req, res, next) => {
+    try{
+        const result = await User.deleteMany({})
+        if (result.deletedCount > 0){
+            res.status(200).json({
+                Message: "Cleared database",
             })
-        } else {
-            if (result.deletedCount > 0){
-                res.status(200).json({
-                    Message: "Cleared database",
-                })
-            } else {
-                res.status(404).json({
-                    Message: "Delete failed",
-                })
-            }
+        }else{
+            res.status(404).json({
+                Message: "Delete failed",
+            })
         }
-    })
+    }catch(error){
+        res.status(500).json({
+            error: err,
+        })
+    }
 })
 
 //User PATCH methods
