@@ -118,12 +118,11 @@ router.patch('/:petId', (req, res, next) => {
 
 });
 
-//Pet DELETE methods (NEED TO ADD FEATURE TO REMOVE THE PET FROM THE USERS AS WELL)
-router.delete('/:petId', (req, res, next) => {
-    const id = req.params.petId;
-    Pet.deleteOne({ _id: id })
-    .exec()
-    .then( result => {
+//TODO: Pet DELETE methods (NEED TO ADD FEATURE TO REMOVE THE PET FROM THE USERS AS WELL)
+router.delete('/:petId', async (req, res, next) => {
+    try{
+        const id = req.params.petId;
+        const result = await Pet.deleteOne({ _id: id })
         if (result.deletedCount > 0){
             res.status(200).json({
                 Message: "Pet deleted successfully",
@@ -133,32 +132,30 @@ router.delete('/:petId', (req, res, next) => {
                 Message: "Delete failed",
             })
         }
-    })
-    .catch(err => {
+    }catch(error){
         res.status(500).json({
-            error: err,
+            error
         })
-    });
+    }
 });
 
-router.delete('/', (req, res, next) => {
-    Pet.deleteMany({}, (err, result) => {
-        if(err){
-            res.status(500).json({
-                error: err,
+router.delete('/', async (req, res, next) => {
+    try{
+        const result = await Pet.deleteMany({})
+        if (result.deletedCount > 0){
+            res.status(200).json({
+                Message: "Cleared database",
             })
         } else {
-            if (result.deletedCount > 0){
-                res.status(200).json({
-                    Message: "Cleared database",
-                })
-            } else {
-                res.status(404).json({
-                    Message: "Delete failed",
-                })
-            }
+            res.status(404).json({
+                Message: "Delete failed",
+            })
         }
-    })
+    }catch(error){
+        res.status(500).json({
+            error
+        })
+    }
 });
 
 module.exports = router;
