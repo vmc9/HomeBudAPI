@@ -7,11 +7,11 @@ const checkAuth = require('../middleware/checkAuth');
 const User = require('../models/user');
 
 //User GET methods
-router.get('/', (req, res, next) => {
-    User.find()
-    .select("-__v")
-    .populate('pets', "-owner -__v")
-    .then( result => {
+router.get('/', async (req, res, next) => {
+    try{
+        const result = await User.find()
+        .select("-__v")
+        .populate('pets', "-owner -__v")
         if(result.length > 0){
             res.status(200).json({
                 Message: "All Users found",
@@ -22,20 +22,16 @@ router.get('/', (req, res, next) => {
                 Message: "Empty database"
             })
         }
-    })
-    .catch( err => {
+    }catch(error){
         res.status(500).json({
-            error: err
+            error
         })
-    });
+    }
 })
 
-router.get('/:username', checkAuth, (req, res, next) => {
-    User.find({
-        username: req.params.username
-    })
-    .exec()
-    .then(users => {
+router.get('/:username', checkAuth, async (req, res, next) => {
+    try{
+        const users = await User.find({ username: req.params.username })
         if (users.length < 1){
             return res.status(401).json({
                 message: "Login failed"
@@ -52,21 +48,17 @@ router.get('/:username', checkAuth, (req, res, next) => {
                 }
             })
         }
-    })
-    .catch( error => {
+    }catch(error){
         return res.status(500).json({
             error: error
-        });
-    })
+        })
+    }
 })
 
 //User POST methods
-router.post('/login', (req, res, next) => {
-    User.find({
-        username: req.body.username
-    })
-    .exec()
-    .then(users => {
+router.post('/login', async (req, res, next) => {
+    try{
+        const users = await User.find({ username: req.body.username })
         if(users.length < 1){
             return res.status(401).json({
                 message: "Auth failed"
@@ -98,61 +90,49 @@ router.post('/login', (req, res, next) => {
                 }
             })
         }
-    })
-    .catch( error => {
+    }catch(error){
         return res.status(500).json({
-            error: error
+            error
         });
-    })
+    }
 });
 
-//TODO: Check for dupe usernames
-router.post('/signup', (req, res, next) => {
-    User.exists({
-        username: req.body.username,
-        email: req.body.email
-    }, (error, result) => {
-        if(error){
-            return res.status(500).json({
-                error: error
-            })
-        } else if (result){
+router.post('/signup', async (req, res, next) => {
+    try{
+        const result = await User.exists({ $or:[{username: req.body.username }, {email: req.body.email}] })
+        if(username_result){
             res.status(409).json({
-                Message: "Conflicting request"
+                Message: "Request conflict"//Email or username are not unique
             })
-        } else {
-            bcrypt.hash(req.body.password, 10, (err, hash) =>{
-                const user = new User({
-                    _id: mongoose.Types.ObjectId(),
-                    username: req.body.username,
-                    email: req.body.email,
-                    password: hash,
-                    firstName: req.body.firstName,
-                    lastName: req.body.lastName
-                });
-                user.save()
-                .then( dbResult => {
-                    res.status(201).json({
-                        Message: "User added succesfully",
-                        createdUser: {
-                            _id: dbResult._id,
-                            username: dbResult.username,
-                            email: dbResult.email,
-                            password: dbResult.password,
-                            firstName: dbResult.firstName,
-                            lastName: dbResult.lastName
-                        }
-                    })
-                })
-                .catch( err => {
-                    res.status(500).json({
-                        error: err
-                    })
-                });
+        }else{
+            const hash = await bcrypt.hash(req.body.password, 10)
+            const user = new User({
+                _id: mongoose.Types.ObjectId(),
+                username: req.body.username,
+                email: req.body.email,
+                password: hash,
+                firstName: req.body.firstName,
+                lastName: req.body.lastName
+            });
+            const dbResult = await user.save()
+            res.status(201).json({
+                Message: "User added succesfully",
+                createdUser: {
+                    _id: dbResult._id,
+                    username: dbResult.username,
+                    email: dbResult.email,
+                    password: dbResult.password,
+                    firstName: dbResult.firstName,
+                    lastName: dbResult.lastName
+                }
             })
         }
-    })
-})
+    }catch(error){
+        return res.status(500).json({
+            error
+        })
+    }
+});
 
 //User DELETE methods
 router.delete('/userId', (req, res, next) => {
