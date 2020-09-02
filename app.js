@@ -33,7 +33,7 @@ app.use((req, res, next) => {
 });
 
 //Routes setup
-app.use('/pet', petRoutes);
+app.use('/pets', petRoutes);
 app.use('/search', searchRoutes);
 app.use('/users', userRoutes);
 

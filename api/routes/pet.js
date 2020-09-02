@@ -8,10 +8,9 @@ const Owner = require('../models/user')
 //Pet GET methods
 router.get('/', async (req, res, next) => {
     try{
-        const result = Pet.find()
+        const result = await Pet.find()
         .select('-__v')
-        .populate('owner', "-pets -__v")
-        .exec()
+        .populate('owner', "username email")
         if(result.length > 0){
             res.status(200).json({
                 Message: "All pets found",
@@ -33,9 +32,9 @@ router.get('/', async (req, res, next) => {
 router.get('/:petId', async (req, res, next) => {
     try{
         const id = req.params.petId;
-        const result = Pet.findById({ _id: id })
+        const result = await Pet.findById({ _id: id })
         .select('-__v')
-        .populate('owner', "-pets -__v")
+        .populate('owner', "username email")
             if(result){
                 res.status(200).json({
                     Message: "Pet found",
@@ -54,78 +53,55 @@ router.get('/:petId', async (req, res, next) => {
 });
 
 //Pet POST methods
-router.post('/', ownerConfirm, (req, res, next) => {
+router.post('/', ownerConfirm, async (req, res, next) => {
     if(req.confOwner){
-        const owner = req.confOwner;
-        Pet.exists({ 
-            name: req.body.name,
-            animal: req.body.animal,
-            owner: owner
-        }, 
-        (petFoundError, result) => {
-            if(petFoundError) {
-                res.status(500).json({
-                    petFoundError: petFoundError
-                })
+        const owner = req.confOwner
+        try{
+            const result = await Pet.exists({
+                name: req.body.name,
+                animal: req.body.animal,
+                owner: owner
+            })
+            if(!result){
+                const pet = new Pet({
+                    _id: mongoose.Types.ObjectId(),
+                    name: req.body.name,
+                    animal: req.body.animal,
+                    description: req.body.description,
+                    owner: owner
+                });
+                const petList = owner.pets;
+                petList.push(pet._id);
+                await Owner.updateOne({ _id: owner._id}, { $set: { pets: petList }})
+                const dbResult = await pet.save()
+                res.status(201).json({
+                    Message: "Pet added succesfully",
+                    createdPet: {
+                        _id: dbResult._id,
+                        name: dbResult.name,
+                        animal: dbResult.animal,
+                        description: dbResult.description,
+                        owner: dbResult.owner.username
+                    }
+                });
             } else {
-                if(!result){
-                    const pet = new Pet({
-                        _id: mongoose.Types.ObjectId(),
-                        name: req.body.name,
-                        animal: req.body.animal,
-                        description: req.body.description,
-                        owner: owner
-                    });
-                    const petList = owner.pets;
-                    petList.push(pet._id);
-                    Owner.updateOne({ _id: owner._id}, { $set: {
-                        pets: petList
-                    }})
-                    .exec()
-                    .then( updatedOwner => {
-                        pet.save()
-                        .then( dbResult => {
-                            res.status(201).json({
-                                Message: "Pet added succesfully",
-                                createdPet: {
-                                    _id: dbResult._id,
-                                    name: dbResult.name,
-                                    animal: dbResult.animal,
-                                    description: dbResult.description,
-                                    owner: dbResult.owner
-                                }
-                            });
-                        })
-                        .catch( petSaveError => {
-                            res.status(500).json({
-                                petSaveError: petSaveError
-                            })
-                        }) 
-                    }).
-                    catch( ownerUpdateError => {
-                        res.status(500).json({
-                            ownerUpdateError: ownerUpdateError
-                        })
-                    });
-                } else {
-                    res.status(400).json({
-                        Message: "Bad request"
-                    })
-                }   
+                res.status(400).json({
+                    Message: "Pet Already Exists"
+                })
             }
-        });
-    } else {
-        res.status(500).json({
-            ownerFoundError: "No owner found"
-        });
+        }catch(error){
+            res.status(500).json({
+                error
+            })
+        }
     }
 });
 
-//Pet PATCH methods
+//TODO:Pet PATCH methods
 router.patch('/:petId', (req, res, next) => {
     const id = req.params.petId;
     Pet.update({ _id: id }, { $set: {
-        //TO-DO
+
     }})
     .exec()
     .then( result => {
