@@ -1,7 +1,19 @@
 const express = require('express');
 const mongoose = require('mongoose');
+
+//File handling
 const multer = require('multer');
-const upload = multer({dest: 'pet_uploads/'});
+const storage = multer.memoryStorage()
+const upload = multer({storage: storage});
+
+//AWS
+const AWS = require('aws-sdk')
+AWS.config.update({
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKEy: process.env.AWS_ACCESS_KEY_ID,
+    region: process.env.AWS_REGION
+})
+const s3 = new AWS.S3()
 
 //Router
 const router = express.Router();
@@ -62,8 +74,18 @@ router.get('/:petId', async (req, res, next) => {
 
 //Pet POST methods
 router.post('/upload', upload.array('pet_photo', 5), async (req, res, next)=>{
+    const files = req.files
+    // Call S3 to list the buckets
+    s3.listBuckets(function(err, data) {
+        if (err) {
+          console.log("Error", err);
+        } else {
+          console.log("Success", data.Buckets);
+        }
+    });
+    console.log(files)
     res.status(200).json({
-        pet_photos: req.files,
+        //pet_photos: req.files,
         pet_id: req.body.pet_id
     })
 })
