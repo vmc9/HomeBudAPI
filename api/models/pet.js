@@ -9,13 +9,13 @@ const petSchema = new Schema({
     age: {type: String, required: true},
     sex: {type: String, required: true},
     size: {type: String, required: true},
-    
     description: { type: String, required: true},
     owner: { 
         type: Schema.Types.ObjectId, 
         ref: 'User', 
         required: true
     },
+    profile: {type: String, default: "placeholder"},
     lost: { type: Boolean, default: false},
 });
 

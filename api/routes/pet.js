@@ -81,9 +81,14 @@ router.post('/', ownerConfirm, async (req, res, next) => {
                 const pet = new Pet({
                     _id: mongoose.Types.ObjectId(),
                     name: req.body.name,
-                    animal: req.body.animal,
+                    type: req.body.type,
+                    breed: req.body.breed,
+                    age: req.body.age,
+                    sex: req.body.sex,
+                    size: req.body.size,
                     description: req.body.description,
-                    owner: owner
+                    owner: owner,
+                    profile: req.body.profile
                 });
                 const petList = owner.pets;
                 petList.push(pet._id);
@@ -94,9 +99,18 @@ router.post('/', ownerConfirm, async (req, res, next) => {
                     createdPet: {
                         _id: dbResult._id,
                         name: dbResult.name,
-                        animal: dbResult.animal,
+                        type: dbResult.type,
+                        breed: dbResult.breed,
+                        age: dbResult.age,
+                        sex: dbResult.sex,
+                        size: dbResult.size,
                         description: dbResult.description,
-                        owner: dbResult.owner.username
+                        owner: {
+                            _id: dbResult.owner._id,
+                            username: dbResult.owner.username,
+                            name: `${dbResult.owner.firstName} ${dbResult.owner.lastName}`
+                        },
+                        profile: dbResult.profile
                     }
                 });
             } else {
@@ -137,8 +151,13 @@ router.patch('/:petId', (req, res, next) => {
 router.delete('/:petId', async (req, res, next) => {
     try{
         const id = req.params.petId;
-        const result = await Pet.deleteOne({ _id: id })
-        if (result.deletedCount > 0){
+        const result = await Pet.findOne({_id: id})
+        const owner = await Owner.findOne({_id: result.owner._id})
+        const updated_pets = owner.pets.filter((value, index, arr)=>{ return value._id != id})
+        await Owner.updateOne({_id: result.owner._id}, {pets: updated_pets})
+
+        const deleted = await Pet.deleteOne({ _id: id })
+        if (deleted.deletedCount > 0){
             res.status(200).json({
                 Message: "Pet deleted successfully",
             })
@@ -156,14 +175,31 @@ router.delete('/:petId', async (req, res, next) => {
 
 router.delete('/', async (req, res, next) => {
     try{
-        const result = await Pet.deleteMany({})
-        if (result.deletedCount > 0){
+        const result = await Pet.find({})
+        deletedCount = 0
+        try{
+            result.forEach(async pet => {
+                const updated = await Owner.updateOne({_id: pet.owner._id}, {pets: []})
+                if(updated){
+                    deletedCount++
+                }
+            })
+        }catch(error){
+            res.status(500).json({
+                message: "Failed to remove pet from owner",
+                error
+            })
+        }
+        const deleted = await Pet.deleteMany({})
+        if (deleted.deletedCount > 0){
             res.status(200).json({
-                Message: "Cleared database",
+                message: "Cleared database",
+                deleted: result,
+                deletedCount
             })
         } else {
             res.status(404).json({
-                Message: "Delete failed",
+                message: "Delete failed",
             })
         }
     }catch(error){
