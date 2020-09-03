@@ -147,23 +147,25 @@ router.patch('/:petId', (req, res, next) => {
 
 });
 
-//TODO: Pet DELETE methods (NEED TO ADD FEATURE TO REMOVE THE PET FROM THE USERS AS WELL)
 router.delete('/:petId', async (req, res, next) => {
     try{
+        //Remove pet from user
         const id = req.params.petId;
         const result = await Pet.findOne({_id: id})
         const owner = await Owner.findOne({_id: result.owner._id})
         const updated_pets = owner.pets.filter((value, index, arr)=>{ return value._id != id})
         await Owner.updateOne({_id: result.owner._id}, {pets: updated_pets})
 
+        //Delete pet
         const deleted = await Pet.deleteOne({ _id: id })
         if (deleted.deletedCount > 0){
             res.status(200).json({
-                Message: "Pet deleted successfully",
+                message: "Pet deleted successfully",
+                deleted: result
             })
         } else {
             res.status(404).json({
-                Message: "Delete failed",
+                message: "Delete failed",
             })
         }
     }catch(error){
@@ -177,6 +179,7 @@ router.delete('/', async (req, res, next) => {
     try{
         const result = await Pet.find({})
         deletedCount = 0
+        //Remove pets from users
         try{
             result.forEach(async pet => {
                 const updated = await Owner.updateOne({_id: pet.owner._id}, {pets: []})
@@ -190,6 +193,7 @@ router.delete('/', async (req, res, next) => {
                 error
             })
         }
+        //Delete pets
         const deleted = await Pet.deleteMany({})
         if (deleted.deletedCount > 0){
             res.status(200).json({

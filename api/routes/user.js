@@ -7,6 +7,7 @@ const checkAuth = require('../middleware/checkAuth');
 
 //Model
 const User = require('../models/user');
+const Pet = require('../models/pet')
 
 //User GET methods
 router.get('/', async (req, res, next) => {
@@ -134,10 +135,14 @@ router.post('/signup', async (req, res, next) => {
 //User DELETE methods
 router.delete('/:username', async (req, res, next) => {
     try{
+        //Delete owner's pets
+        const deleted_pets = await Pet.deleteMany({owner: (await User.findOne({ username: req.params.username}))._id})
+        //Delete owner
         const result = await User.deleteOne( { username: req.params.username })
         if (result.deletedCount > 0){
             res.status(200).json({
                 Message: "User deleted",
+                deleted_pets
             })
         }else{
             res.status(404).json({
@@ -153,11 +158,16 @@ router.delete('/:username', async (req, res, next) => {
 
 router.delete('/', async (req, res, next) => {
     try{
+        //Delete pets
+        const deleted_pets = await Pet.deleteMany({})
+        //Delete users
         const result = await User.deleteMany({})
         if (result.deletedCount > 0){
             res.status(200).json({
                 Message: "Cleared database",
-            })
+                deleted_pets,
+                deleted_owners: result.deletedCount
+            }) 
         }else{
             res.status(404).json({
                 Message: "Delete failed",
