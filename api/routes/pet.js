@@ -1,7 +1,15 @@
 const express = require('express');
-const router = express.Router();
 const mongoose = require('mongoose');
+const multer = require('multer');
+const upload = multer({dest: 'pet_uploads/'});
+
+//Router
+const router = express.Router();
+
+//Middlewares
 const ownerConfirm = require('../middleware/ownerConfirm');
+
+//Models
 const Pet = require('../models/pet');
 const Owner = require('../models/user')
 
@@ -53,6 +61,13 @@ router.get('/:petId', async (req, res, next) => {
 });
 
 //Pet POST methods
+router.post('/upload', upload.array('pet_photo', 5), async (req, res, next)=>{
+    res.status(200).json({
+        pet_photos: req.files,
+        pet_id: req.body.pet_id
+    })
+})
+
 router.post('/', ownerConfirm, async (req, res, next) => {
     if(req.confOwner){
         const owner = req.confOwner

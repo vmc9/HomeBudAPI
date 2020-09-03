@@ -4,16 +4,19 @@ const Schema = mongoose.Schema;
 const petSchema = new Schema({
     _id: Schema.Types.ObjectId,
     name: { type: String, required: true},
-    animal: {type: String, required: true},
-    breed: String,
-    age: Number,
-    sex: String,
+    type: {type: String, required: true},
+    breed: {type: String, required: true},
+    age: {type: String, required: true},
+    sex: {type: String, required: true},
+    size: {type: String, required: true},
+    
     description: { type: String, required: true},
     owner: { 
         type: Schema.Types.ObjectId, 
         ref: 'User', 
+        required: true
     },
-    lostStatus: Boolean,
+    lost: { type: Boolean, default: false},
 });
 
 module.exports = mongoose.model('Pet', petSchema);
