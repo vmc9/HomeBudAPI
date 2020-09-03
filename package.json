@@ -19,12 +19,8 @@
   },
   "homepage": "https://github.com/vmc9/HomeBudAPI#readme",
   "dependencies": {
-<<<<<<< HEAD
     "aws-sdk": "^2.745.0",
-    "bcrypt": "^4.0.1",
-=======
     "bcrypt": "^5.0.0",
->>>>>>> bc2ad317821f1477c1c280b486d36844b0dc07e4
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
