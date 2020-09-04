@@ -74,20 +74,32 @@ router.get('/:petId', async (req, res, next) => {
 
 //Pet POST methods
 router.post('/upload', upload.array('pet_photo', 5), async (req, res, next)=>{
-    const files = req.files
-    // Call S3 to list the buckets
-    s3.listBuckets(function(err, data) {
-        if (err) {
-          console.log("Error", err);
-        } else {
-          console.log("Success", data.Buckets);
+    const uploads = [];
+    const subfolder = `pet_images/${req.body.pet_id}`
+    try{
+        for (const [index, value] of req.files.entries()){
+            if(value.mimetype != "image/jpeg"){ throw("Invalid file type")}
+            var params = {
+                Bucket: 'homebud',
+                Key: `${subfolder}/${index}.${value.mimetype.split("/")[1]}`,
+                Body: value.buffer,
+                ContentType: value.mimetype,
+                ACL: "public-read"
+            }
+            const data = await s3.upload(params).promise()
+            if(data) {
+              uploads.push(data.Location)
+            }
         }
-    });
-    console.log(files)
-    res.status(200).json({
-        //pet_photos: req.files,
-        pet_id: req.body.pet_id
-    })
+        res.status(200).json({
+            uploaded: uploads        
+        })
+    }catch(error){
+        res.status(500).json({
+            message: "file upload failed",
+            error
+        })
+    }
 })
 
 router.post('/', ownerConfirm, async (req, res, next) => {
