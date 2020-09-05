@@ -78,7 +78,6 @@ router.post('/upload', upload.array('pet_photo', 5), async (req, res, next)=>{
     const subfolder = `pet_images/${req.body.pet_id}`
     try{
         for (const [index, value] of req.files.entries()){
-            console.log(value)
             if(value.mimetype != "image/jpeg"){ throw("Invalid file type")}
             var params = {
                 Bucket: 'homebud',

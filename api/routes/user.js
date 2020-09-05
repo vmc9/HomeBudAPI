@@ -43,6 +43,7 @@ router.get('/:username', checkAuth, async (req, res, next) => {
             return res.status(200).json({
                 message: "User found",
                 user: {
+                    id: users[0]._id,
                     firstname: users[0].firstName,
                     lastname: users[0].lastName,
                     pets: users[0].pets,
