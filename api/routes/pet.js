@@ -81,7 +81,7 @@ router.post('/upload', upload.array('pet_photo', 5), async (req, res, next)=>{
             if(value.mimetype != "image/jpeg"){ throw("Invalid file type")}
             var params = {
                 Bucket: 'homebud',
-                Key: `${subfolder}/${(index+1)}.${value.mimetype.split("/")[1]}`,
+                Key: `${subfolder}/${(index)}.${value.mimetype.split("/")[1]}`,
                 Body: value.buffer,
                 ContentType: value.mimetype,
                 ACL: "public-read"
@@ -122,7 +122,7 @@ router.post('/', ownerConfirm, async (req, res, next) => {
                     size: req.body.size,
                     description: req.body.description,
                     owner: owner,
-                    profile: req.body.profile.selection
+                    profile: req.body.profile
                 });
                 const petList = owner.pets;
                 petList.push(pet._id);
