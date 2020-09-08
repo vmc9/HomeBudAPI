@@ -15,7 +15,7 @@ const petSchema = new Schema({
         ref: 'User', 
         required: true
     },
-    profile: {type: String, default: "placeholder"},
+    profile: {type: Number},
     lost: { type: Boolean, default: false},
 });
 
