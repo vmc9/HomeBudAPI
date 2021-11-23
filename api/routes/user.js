@@ -32,16 +32,16 @@ router.get('/', async (req, res, next) => {
     }
 })
 
-router.get('/:username', checkAuth, async (req, res, next) => {
+router.get('/returning', checkAuth, async (req, res, next) => {
     try{
-        const users = await User.find({ username: req.params.username })
+        const users = await User.find({ username: req.userData.username })
         if (users.length < 1){
             return res.status(401).json({
-                message: "User not found"
+                message: "Auth failed"
             })
         } else {
             return res.status(200).json({
-                message: "User found",
+                message: "User restored",
                 user: {
                     id: users[0]._id,
                     firstname: users[0].firstName,
@@ -53,8 +53,66 @@ router.get('/:username', checkAuth, async (req, res, next) => {
             })
         }
     }catch(error){
-        return res.status(500).json({
-            error: error
+        res.status(500).json({
+            error
+        })
+    }
+})
+
+router.get('/search', checkAuth, async (req, res, next) => {
+    if(req.query.username){
+        try{
+            const users = await User.find({ username: req.query.username })
+            if (users.length < 1){
+                return res.status(401).json({
+                    message: "User not found with that username"
+                })
+            } else {
+                return res.status(200).json({
+                    message: "User found",
+                    user: {
+                        id: users[0]._id,
+                        firstname: users[0].firstName,
+                        lastname: users[0].lastName,
+                        pets: users[0].pets,
+                        username: users[0].username,
+                        email: users[0].email
+                    }
+                })
+            }
+        }catch(error){
+            return res.status(500).json({
+                error: error
+            })
+        }
+    }else if(req.query.email){
+        try{
+            const users = await User.find({ email: req.query.email })
+            if (users.length < 1){
+                return res.status(401).json({
+                    message: "User not found with that email"
+                })
+            } else {
+                return res.status(200).json({
+                    message: "User found",
+                    user: {
+                        id: users[0]._id,
+                        firstname: users[0].firstName,
+                        lastname: users[0].lastName,
+                        pets: users[0].pets,
+                        username: users[0].username,
+                        email: users[0].email
+                    }
+                })
+            }
+        }catch(error){
+            return res.status(500).json({
+                error: error
+            })
+        }
+    }else {
+        return res.status(401).json({
+            message: "User not found"
         })
     }
 })
@@ -72,7 +130,7 @@ router.post('/login', async (req, res, next) => {
             if (result){
                 const token = jwt.sign({
                     userId: users[0]._id,
-                    email: users[0].username
+                    username: users[0].username
                 },
                 process.env.JWT_KEY,
                 {
@@ -137,9 +195,9 @@ router.post('/signup', async (req, res, next) => {
 router.delete('/:username', async (req, res, next) => {
     try{
         //Delete owner's pets
-        const deleted_pets = await Pet.deleteMany({owner: (await User.findOne({ username: req.params.username}))._id})
+        const deleted_pets = await Pet.deleteMany({owner: (await User.findOne({ username: req.query.username}))._id})
         //Delete owner
-        const result = await User.deleteOne( { username: req.params.username })
+        const result = await User.deleteOne( { username: req.query.username })
         if (result.deletedCount > 0){
             res.status(200).json({
                 Message: "User deleted",

@@ -51,7 +51,7 @@ router.get('/', async (req, res, next) => {
 
 router.get('/:petId', async (req, res, next) => {
     try{
-        const id = req.params.petId;
+        const id = req.query.petId;
         const result = await Pet.findById({ _id: id })
         .select('-__v')
         .populate('owner', "username email")
@@ -162,7 +162,7 @@ router.post('/', ownerConfirm, async (req, res, next) => {
 
 //TODO:Pet PATCH methods
 router.patch('/:petId', (req, res, next) => {
-    const id = req.params.petId;
+    const id = req.query.petId;
     Pet.update({ _id: id }, { $set: {
 
     }})
@@ -184,7 +184,7 @@ router.patch('/:petId', (req, res, next) => {
 router.delete('/:petId', async (req, res, next) => {
     try{
         //Remove pet from user
-        const id = req.params.petId;
+        const id = req.query.petId;
         const result = await Pet.findOne({_id: id})
         const owner = await Owner.findOne({_id: result.owner._id})
         const updated_pets = owner.pets.filter((value, index, arr)=>{ return value._id != id})
